@@ -64,9 +64,6 @@ export default function Home() {
                   <h1 className="welcome-title">
                     {getGreeting()}, <span className="welcome-name">{firstName}!</span>
                   </h1>
-                  <p className="welcome-sub">
-                    You have <strong>{0}</strong> — ready to save something new?
-                  </p>
                 </div>
               </div>
             </div>

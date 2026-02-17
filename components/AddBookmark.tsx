@@ -10,14 +10,47 @@ export default function AddBookmark({ userId }: { userId: string }) {
   const [errors, setErrors] = useState<{ title?: string; url?: string }>({})
   const [success, setSuccess] = useState(false)
 
-  const validateUrl = (urlString: string): string | null => {
+  // Strict URL validation — must be a real domain like google.com or https://google.com
+  const validateUrl = (input: string): { valid: boolean; formatted: string; error?: string } => {
+    const raw = input.trim()
+
+    if (!raw) {
+      return { valid: false, formatted: '', error: '⚠️ Please enter a URL — e.g. google.com' }
+    }
+
+    // Reject if it's just random text with no dot (e.g. "abcdef", "hello world")
+    const hasDot = raw.replace(/^https?:\/\//i, '').includes('.')
+    if (!hasDot) {
+      return { valid: false, formatted: '', error: '⚠️ Enter a valid URL — e.g. google.com or youtube.com' }
+    }
+
+    // Auto-add https:// if missing
+    let formatted = raw
+    if (!formatted.match(/^https?:\/\//i)) {
+      formatted = `https://${formatted}`
+    }
+
+    // Must pass URL constructor
     try {
-      let formatted = urlString.trim()
-      if (!formatted.match(/^https?:\/\//i)) formatted = `https://${formatted}`
-      new URL(formatted)
-      return formatted
+      const parsed = new URL(formatted)
+
+      // Hostname must have at least one dot and a real TLD (min 2 chars)
+      const hostname = parsed.hostname
+      const parts = hostname.split('.')
+      const tld = parts[parts.length - 1]
+
+      if (parts.length < 2 || tld.length < 2) {
+        return { valid: false, formatted: '', error: '⚠️ Enter a valid URL — e.g. google.com or youtube.com' }
+      }
+
+      // Reject localhost and IP-only addresses for production use
+      if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+        return { valid: false, formatted: '', error: '⚠️ Please enter a real website URL — e.g. google.com' }
+      }
+
+      return { valid: true, formatted }
     } catch {
-      return null
+      return { valid: false, formatted: '', error: '⚠️ Enter a valid URL — e.g. google.com or youtube.com' }
     }
   }
 
@@ -28,13 +61,12 @@ export default function AddBookmark({ userId }: { userId: string }) {
     const newErrors: { title?: string; url?: string } = {}
 
     if (!title.trim()) {
-      newErrors.title = 'Please enter a title'
+      newErrors.title = '⚠️ Please enter a title'
     }
 
-    if (!url.trim()) {
-      newErrors.url = '⚠️ Please enter a URL — e.g. google.com'
-    } else if (!validateUrl(url)) {
-      newErrors.url = '⚠️ Invalid URL — try something like google.com'
+    const urlCheck = validateUrl(url)
+    if (!urlCheck.valid) {
+      newErrors.url = urlCheck.error
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -46,10 +78,9 @@ export default function AddBookmark({ userId }: { userId: string }) {
     setLoading(true)
 
     try {
-      const validUrl = validateUrl(url)!
       const { error: insertError } = await supabase
         .from('bookmarks')
-        .insert([{ user_id: userId, title: title.trim(), url: validUrl }])
+        .insert([{ user_id: userId, title: title.trim(), url: urlCheck.formatted }])
 
       if (insertError) throw insertError
       setTitle('')
@@ -81,7 +112,7 @@ export default function AddBookmark({ userId }: { userId: string }) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            Bookmark saved!
+            Bookmark saved successfully!
           </div>
         )}
 
@@ -106,13 +137,13 @@ export default function AddBookmark({ userId }: { userId: string }) {
             type="text"
             value={url}
             onChange={(e) => { setUrl(e.target.value); setErrors(p => ({ ...p, url: undefined })) }}
-            placeholder="e.g. google.com"
+            placeholder="e.g. google.com or youtube.com"
             className={`field-input ${errors.url ? 'field-input-error' : ''}`}
             disabled={loading}
           />
           {errors.url
             ? <div className="field-error">{errors.url}</div>
-            : <span className="field-hint">https:// is added automatically</span>
+            : <span className="field-hint">No need to type https:// — we'll add it for you</span>
           }
         </div>
 
