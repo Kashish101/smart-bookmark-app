@@ -92,29 +92,17 @@ export default function AddBookmark({ userId }: { userId: string }) {
         </div>
 
         <div className="field-group">
-  <label className="field-label">URL</label>
-  <input
-    type="url"
-    value={url}
-    onChange={(e) => {
-      const value = e.target.value;
-
-      // Allow only domain-like structure (no spaces, no special random text)
-      const urlPattern = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-      if (value === "" || urlPattern.test(value)) {
-        setUrl(value);
-      }
-    }}
-    placeholder="e.g. example.com"
-    className="field-input"
-    disabled={loading}
-  />
-  <span className="field-hint">
-    Enter only domain (e.g. example.com). https:// is added automatically
-  </span>
-</div>
-
+          <label className="field-label">URL</label>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="e.g. example.com"
+            className="field-input"
+            disabled={loading}
+          />
+          <span className="field-hint">https:// is added automatically</span>
+        </div>
 
         <button type="submit" disabled={loading} className="btn-add">
           {loading ? (
