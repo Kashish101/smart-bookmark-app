@@ -7,7 +7,7 @@ export default function AddBookmark({ userId }: { userId: string }) {
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [errors, setErrors] = useState<{ title?: string; url?: string }>({})
   const [success, setSuccess] = useState(false)
 
   const validateUrl = (urlString: string): string | null => {
@@ -16,22 +16,37 @@ export default function AddBookmark({ userId }: { userId: string }) {
       if (!formatted.match(/^https?:\/\//i)) formatted = `https://${formatted}`
       new URL(formatted)
       return formatted
-    } catch { return null }
+    } catch {
+      return null
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setSuccess(false)
 
-    if (!title.trim()) return setError('Please enter a title')
-    if (!url.trim()) return setError('Please enter a URL')
+    const newErrors: { title?: string; url?: string } = {}
 
-    const validUrl = validateUrl(url)
-    if (!validUrl) return setError('Please enter a valid URL')
+    if (!title.trim()) {
+      newErrors.title = 'Please enter a title'
+    }
 
+    if (!url.trim()) {
+      newErrors.url = '⚠️ Please enter a URL — e.g. google.com'
+    } else if (!validateUrl(url)) {
+      newErrors.url = '⚠️ Invalid URL — try something like google.com'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
+    setErrors({})
     setLoading(true)
+
     try {
+      const validUrl = validateUrl(url)!
       const { error: insertError } = await supabase
         .from('bookmarks')
         .insert([{ user_id: userId, title: title.trim(), url: validUrl }])
@@ -40,9 +55,9 @@ export default function AddBookmark({ userId }: { userId: string }) {
       setTitle('')
       setUrl('')
       setSuccess(true)
-      setTimeout(() => setSuccess(false), 2000)
+      setTimeout(() => setSuccess(false), 3000)
     } catch {
-      setError('Failed to add bookmark. Please try again.')
+      setErrors({ url: 'Failed to save. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -57,51 +72,48 @@ export default function AddBookmark({ userId }: { userId: string }) {
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         </div>
-        <h2 className="add-title">Add New Bookmark</h2>
+        <h2 className="add-title">New Bookmark</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="add-form">
-        {error && (
-          <div className="error-msg">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            {error}
-          </div>
-        )}
-
         {success && (
           <div className="success-msg">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            Bookmark added!
+            Bookmark saved!
           </div>
         )}
 
+        {/* Title */}
         <div className="field-group">
           <label className="field-label">Title</label>
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); setErrors(p => ({ ...p, title: undefined })) }}
             placeholder="e.g. My Favorite Blog"
-            className="field-input"
+            className={`field-input ${errors.title ? 'field-input-error' : ''}`}
             disabled={loading}
           />
+          {errors.title && <div className="field-error">{errors.title}</div>}
         </div>
 
+        {/* URL */}
         <div className="field-group">
           <label className="field-label">URL</label>
           <input
-            type="url"
+            type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="e.g. example.com"
-            className="field-input"
+            onChange={(e) => { setUrl(e.target.value); setErrors(p => ({ ...p, url: undefined })) }}
+            placeholder="e.g. google.com"
+            className={`field-input ${errors.url ? 'field-input-error' : ''}`}
             disabled={loading}
           />
-          <span className="field-hint">https:// is added automatically</span>
+          {errors.url
+            ? <div className="field-error">{errors.url}</div>
+            : <span className="field-hint">https:// is added automatically</span>
+          }
         </div>
 
         <button type="submit" disabled={loading} className="btn-add">
@@ -115,7 +127,8 @@ export default function AddBookmark({ userId }: { userId: string }) {
           ) : (
             <>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               Add Bookmark
             </>

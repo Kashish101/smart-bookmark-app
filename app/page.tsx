@@ -29,12 +29,22 @@ export default function Home() {
     })
   }
 
+  // Get first name from Google profile
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'there'
+
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="live-badge live-connecting">
-          <span className="live-dot" />
-          Loading...
+          <span className="live-dot" /> Loading...
         </div>
       </div>
     )
@@ -43,14 +53,29 @@ export default function Home() {
   return (
     <>
       <Header />
-
       <main className="page-wrapper">
         {user ? (
           <>
+            {/* WELCOME MESSAGE */}
+            <div className="welcome-banner">
+              <div className="welcome-left">
+                <span className="welcome-wave">👋</span>
+                <div>
+                  <h1 className="welcome-title">
+                    {getGreeting()}, <span className="welcome-name">{firstName}!</span>
+                  </h1>
+                  <p className="welcome-sub">
+                    You have <strong>{0}</strong> — ready to save something new?
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <AddBookmark userId={user.id} />
             <BookmarkList userId={user.id} />
           </>
         ) : (
+          /* HERO / LANDING */
           <div className="hero">
             <div className="hero-badge">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -58,16 +83,12 @@ export default function Home() {
               </svg>
               Real-time sync across all tabs
             </div>
-
             <h1 className="hero-title">
-              Save what<br />
-              <span>matters most</span>
+              Save what<br /><span>matters most</span>
             </h1>
-
             <p className="hero-sub">
               A beautiful bookmark manager that syncs instantly across all your devices and tabs.
             </p>
-
             <div className="features-grid">
               <div className="feature-item">
                 <div className="feature-emoji">⚡</div>
@@ -85,7 +106,6 @@ export default function Home() {
                 <div className="feature-desc">Clean interface, zero clutter</div>
               </div>
             </div>
-
             <button onClick={handleSignIn} className="btn-signin" style={{ margin: '0 auto' }}>
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -95,17 +115,11 @@ export default function Home() {
               </svg>
               Continue with Google
             </button>
-
-            <p className="hero-cta" style={{ marginTop: '20px' }}>
-              Free forever · No credit card required
-            </p>
+            <p className="hero-cta" style={{ marginTop: '20px' }}>Free forever · No credit card required</p>
           </div>
         )}
       </main>
-
-      <footer className="footer">
-        Built with Next.js, Supabase & ♥
-      </footer>
+      <footer className="footer">Built with Next.js, Supabase & ♥</footer>
     </>
   )
 }
