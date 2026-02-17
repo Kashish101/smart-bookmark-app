@@ -158,16 +158,31 @@ body {
 .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 
 .logo-icon {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  background: var(--accent);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  box-shadow: 0 0 20px var(--accent-glow);
+  flex-shrink: 0;
+  /* No glow, no gradient — clean flat color */
 }
+
+/* FIND .logo-text { ... } and REPLACE with this: */
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+/* ADD this new class anywhere in the logo section: */
+.logo-accent {
+  color: var(--accent2);
+}
+
 
 .logo-text {
   font-family: 'Syne', sans-serif;
