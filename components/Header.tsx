@@ -1,0 +1,126 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+
+export default function Header() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [dark, setDark] = useState(true)
+
+  useEffect(() => {
+    // Load saved theme preference
+    const saved = localStorage.getItem('theme')
+    const isDark = saved ? saved === 'dark' : true
+    setDark(isDark)
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const toggleTheme = () => {
+    const next = !dark
+    setDark(next)
+    localStorage.setItem('theme', next ? 'dark' : 'light')
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
+  }
+
+  const handleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+  }
+
+  return (
+    <header className="header">
+      <div className="header-inner">
+        <div className="logo">
+          <div className="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" fill="currentColor"/>
+            </svg>
+          </div>
+          <span className="logo-text">Smart BookMark🔖 </span>
+        </div>
+
+        <div className="header-right">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="theme-toggle"
+            aria-label="Toggle theme"
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <div className={`toggle-track ${dark ? 'dark' : 'light'}`}>
+              <div className="toggle-thumb">
+                {dark ? (
+                  // Moon icon
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                  </svg>
+                ) : (
+                  // Sun icon
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                  </svg>
+                )}
+              </div>
+            </div>
+          </button>
+
+          {!loading && (
+            <>
+              {user ? (
+                <div className="user-section">
+                  <div className="user-info">
+                    {user.user_metadata.avatar_url ? (
+                      <img src={user.user_metadata.avatar_url} alt="avatar" className="avatar" />
+                    ) : (
+                      <div className="avatar-fallback">
+                        {(user.user_metadata.full_name || user.email || 'U')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <span className="user-name">{user.user_metadata.full_name?.split(' ')[0] || 'User'}</span>
+                  </div>
+                  <button onClick={handleSignOut} className="btn-signout">Sign out</button>
+                </div>
+              ) : (
+                <button onClick={handleSignIn} className="btn-signin">
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  Continue with Google
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
