@@ -123,10 +123,6 @@ export default function BookmarkList({ userId }: { userId: string }) {
             <h2 className="list-title">Your Bookmarks</h2>
             <span className="count-badge">{bookmarks.length}</span>
           </div>
-          <div className={`live-badge live-${liveStatus}`}>
-            <span className="live-dot" />
-            {liveStatus === 'live' ? 'Live' : liveStatus === 'error' ? 'Error' : 'Connecting'}
-          </div>
         </div>
 
         {bookmarks.length === 0 ? (
