@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase, Bookmark } from '@/lib/supabase'
 
+
 export default function BookmarkList({ userId }: { userId: string }) {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([])
   const [loading, setLoading] = useState(true)
